@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package com.starry.myne.ui.screens.reader.others
+package com.starry.myne.ui.screens.reader.main.viewmodel
 
 import androidx.annotation.Keep
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import com.starry.myne.R
-import com.starry.myne.ui.theme.figeronaFont
+import com.starry.myne.ui.theme.poppinsFont
 
 @Keep
 sealed class ReaderFont(val id: String, val name: String, val fontFamily: FontFamily) {
 
     companion object {
-        fun getAllFonts() =
-            ReaderFont::class.sealedSubclasses.mapNotNull { it.objectInstance }.sortedBy { it.name }
+        private val fontMap by lazy {
+            ReaderFont::class.sealedSubclasses
+                .mapNotNull { it.objectInstance }
+                .associateBy { it.id }
+        }
 
+        fun getAllFonts() = fontMap.values.toList()
+        fun getFontById(id: String) = fontMap[id]!!
         fun getFontByName(name: String) = getAllFonts().find { it.name == name }!!
     }
 
@@ -52,5 +57,5 @@ sealed class ReaderFont(val id: String, val name: String, val fontFamily: FontFa
         ReaderFont("dyslexic", "OpenDyslexic", FontFamily(Font(R.font.reader_inter_font)))
 
     @Keep
-    data object Lora : ReaderFont("figerona", "Figerona", figeronaFont)
+    data object Lora : ReaderFont("poppins", "Poppins", poppinsFont)
 }

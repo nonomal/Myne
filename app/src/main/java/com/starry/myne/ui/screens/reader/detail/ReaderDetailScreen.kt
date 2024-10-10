@@ -15,7 +15,7 @@
  */
 
 
-package com.starry.myne.ui.screens.reader.composables
+package com.starry.myne.ui.screens.reader.detail
 
 import android.content.Intent
 import androidx.compose.animation.Crossfade
@@ -62,7 +62,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.annotation.ExperimentalCoilApi
 import com.starry.myne.MainActivity
 import com.starry.myne.R
-import com.starry.myne.database.reader.ReaderData
+import com.starry.myne.database.progress.ProgressData
 import com.starry.myne.helpers.NetworkObserver
 import com.starry.myne.helpers.getActivity
 import com.starry.myne.helpers.toToast
@@ -71,11 +71,9 @@ import com.starry.myne.ui.common.BookDetailTopUI
 import com.starry.myne.ui.common.CustomTopAppBar
 import com.starry.myne.ui.common.ProgressDots
 import com.starry.myne.ui.common.simpleVerticalScrollbar
-import com.starry.myne.ui.screens.reader.activities.ReaderActivity
-import com.starry.myne.ui.screens.reader.activities.ReaderConstants
-import com.starry.myne.ui.screens.reader.viewmodels.ReaderDetailScreenState
-import com.starry.myne.ui.screens.reader.viewmodels.ReaderDetailViewModel
-import com.starry.myne.ui.theme.figeronaFont
+import com.starry.myne.ui.screens.reader.main.activities.ReaderActivity
+import com.starry.myne.ui.screens.reader.main.activities.ReaderConstants
+import com.starry.myne.ui.theme.poppinsFont
 
 
 @Composable
@@ -104,10 +102,10 @@ fun ReaderDetailScreen(
                 navController.navigateUp()
             } else {
                 // Collect saved reader progress for the current book.
-                val readerData = viewModel.readerData?.collectAsState(initial = null)?.value
+                val readerData = viewModel.progressData?.collectAsState(initial = null)?.value
                 ReaderDetailScaffold(
                     libraryItemId = libraryItemId,
-                    readerData = readerData,
+                    progressData = readerData,
                     state = state,
                     navController = navController
                 )
@@ -120,7 +118,7 @@ fun ReaderDetailScreen(
 @Composable
 private fun ReaderDetailScaffold(
     libraryItemId: String,
-    readerData: ReaderData?,
+    progressData: ProgressData?,
     state: ReaderDetailScreenState,
     navController: NavController
 ) {
@@ -133,7 +131,7 @@ private fun ReaderDetailScaffold(
         }
     }, floatingActionButton = {
         ExtendedFloatingActionButton(
-            text = { Text(text = stringResource(id = if (readerData != null) R.string.continue_reading_button else R.string.start_reading_button)) },
+            text = { Text(text = stringResource(id = if (progressData != null) R.string.continue_reading_button else R.string.start_reading_button)) },
             onClick = {
                 val intent = Intent(context, ReaderActivity::class.java)
                 intent.putExtra(
@@ -156,17 +154,14 @@ private fun ReaderDetailScaffold(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(it)
         ) {
-            // Get the cover image data.
-            val imageData =
-                state.ebookData!!.coverImage ?: state.ebookData.epubBook.coverImage
-
             BookDetailTopUI(
-                title = state.ebookData.title,
-                authors = state.ebookData.authors,
-                imageData = imageData,
+                title = state.title,
+                authors = state.authors,
+                imageData = state.coverImage,
                 currentThemeMode = settingsVM.getCurrentTheme(),
                 showReaderBackground = true,
-                progressPercent = readerData?.getProgressPercent(state.ebookData.epubBook.chapters.size),
+                progressPercent = if (state.hasProgressSaved)
+                    progressData?.getProgressPercent(state.chapters.size) else ""
             )
 
             HorizontalDivider(
@@ -183,8 +178,8 @@ private fun ReaderDetailScaffold(
                     lazyListState, color = MaterialTheme.colorScheme.primary
                 )
             ) {
-                items(state.ebookData.epubBook.chapters.size) { idx ->
-                    val chapter = state.ebookData.epubBook.chapters[idx]
+                items(state.chapters.size) { idx ->
+                    val chapter = state.chapters[idx]
                     ChapterItem(chapterTitle = chapter.title, onClick = {
                         val intent = Intent(context, ReaderActivity::class.java)
                         intent.putExtra(
@@ -211,22 +206,22 @@ private fun ChapterItem(chapterTitle: String, onClick: () -> Unit) {
             containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
         ),
         modifier = Modifier
-            .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 2.dp)
+            .padding(horizontal = 8.dp, vertical = 2.dp)
             .fillMaxWidth()
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 12.dp, bottom = 12.dp)
+            modifier = Modifier.padding(vertical = 12.dp)
         ) {
             Text(
                 modifier = Modifier
                     .weight(3f)
                     .padding(start = 12.dp),
                 text = chapterTitle,
-                fontFamily = figeronaFont,
+                fontFamily = poppinsFont,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
             )
 
             Icon(
