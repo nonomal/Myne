@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Myne</string>
     <!-- Others Strings -->
@@ -8,31 +9,26 @@
     <string name="ok">OK</string>
     <string name="got_it">Verstanden</string>
     <string name="no_app_to_handle_epub">Kann keine App zum Öffnen von Epub-Dateien finden.</string>
-    <string name="network_error">Hoppla! Konnte keine Verbindung zum Server aufbauen.</string>
+    <string name="network_error">Hoppla! Der Server ist aktuell nicht erreichbar. Bitte probiere es später erneut.</string>
     <string name="network_error_retry">Erneut versuchen</string>
     <string name="error">Hoppla! Etwas ist schiefgelaufen.</string>
     <string name="no_app_to_handle_content">Keine App gefunden, um diesen Inhalt zu öffnen.</string>
-
     <!-- Navigation titles -->
     <string name="navigation_home">Start</string>
     <string name="navigation_categories">Kategorien</string>
     <string name="navigation_library">Bibliothek</string>
     <string name="navigation_settings">Einstellungen</string>
-
     <!-- ToolTips -->
     <string name="library_tooltip">TIPP! Wische Bibliothekselemente nach links oder rechts, um sie zu teilen oder Buchdetails anzusehen.</string>
-
     <!-- Welcome Screen -->
     <string name="welcome_screen_title">Danke für die Installation von Myne!</string>
     <string name="welcome_screen_desc">Wählen Sie Ihren bevorzugten E-Book-Reader, um Ihre Lese-Reise zu beginnen.</string>
     <string name="welcome_screen_button">Loslegen</string>
-
     <!-- Home screen. -->
     <string name="home_header">Alle Bücher</string>
     <string name="home_language_icon_desc">Nach Sprache sortieren</string>
     <string name="home_search_icon_desc">Bücher suchen</string>
     <string name="language_menu_title">Nach Sprache durchsuchen</string>
-
     <!-- Categories screen. -->
     <string name="categories_header">Kategorien</string>
     <string name="no_books_found_for_lang_and_cat">Keine Bücher auf %s in dieser Kategorie verfügbar.</string>
@@ -55,7 +51,6 @@
     <string name="category_religion">Religion</string>
     <string name="category_romance">Romantik</string>
     <string name="category_science">Wissenschaft</string>
-
     <!-- Library screen. -->
     <string name="library_header">Bibliothek</string>
     <string name="empty_library">Nichts vorhanden!</string>
@@ -72,19 +67,16 @@
     <string name="library_read_button">Lesen</string>
     <string name="library_delete_button">Löschen</string>
     <string name="library_delete_dialog_title">Bist du dir ganz sicher?</string>
-
     <!-- Reader Detail Screen -->
     <string name="reader_detail_header">E-Book-Reader</string>
     <string name="start_reading_button">Beginnen</string>
     <string name="continue_reading_button">Weiterlesen</string>
     <string name="reader_chapters_list">Kapitel</string>
-
     <!--Reader Screen -->
-    <string name="reader_max_font_size_reached">Entschuldige bitte, größer kann es nicht dargestellt werden!</string>
-    <string name="reader_min_font_size_reached">Entschuldige bitte, kleiner kann es nicht dargestellt werden!</string>
+    <string name="reader_max_font_size_reached">Die maximale Schriftgröße wurde erreicht</string>
+    <string name="reader_min_font_size_reached">Die kleinste Schriftgröße wurde erreicht</string>
     <string name="reader_font_style_chooser">Schriftart ändern</string>
     <string name="reader_chapter_list_title">Kapitel</string>
-
     <!-- Text selection -->
     <string name="copy">Kopieren</string>
     <string name="copied">Kopiert!</string>
@@ -92,7 +84,6 @@
     <string name="share">Teilen</string>
     <string name="translate">Übersetzen</string>
     <string name="dictionary">Bedeutung</string>
-
     <!-- Settings screen. -->
     <string name="settings_header">Einstellungen</string>
     <string name="app_desc">E-Book-Downloader</string>
@@ -105,6 +96,8 @@
     <string name="default_locale_setting">Standard-Sprache</string>
     <string name="default_locale_setting_desc">Wählen Sie Ihre bevorzugte Sprachumgebung.</string>
     <string name="locale_setting_not_found">Entschuldigung! Diese Funktion wird von Ihrem Betriebssystem noch nicht unterstützt.</string>
+    <string name="open_library_at_start_setting">Bibliothek beim Start öffnen</string>
+    <string name="open_library_at_start_setting_desc">Öffnet die Bibliotheksansicht beim Starten der App.</string>
     <string name="display_setting_header">Darstellung</string>
     <string name="theme_setting">Standard-Theme</string>
     <string name="theme_dialog_title">Theme ändern</string>
@@ -124,10 +117,8 @@
     <string name="license_setting_desc">Open-Source-Lizenzen.</string>
     <string name="about_setting">App-Informationen</string>
     <string name="about_setting_desc">App-Information &amp; nützliche Links anzeigen</string>
-
     <!-- Books card -->
     <string name="cover_image_desc">Buch-Cover-Bild</string>
-
     <!-- Book Detail Screen -->
     <string name="book_detail_header">Buchdetails</string>
     <string name="back_button_desc">Zurückgehen.</string>
@@ -138,7 +129,6 @@
     <string name="download_started">Herunterladen begonnen!</string>
     <string name="book_synopsis">Zusammenfassung</string>
     <string name="book_synopsis_not_found">Nicht verfügbar</string>
-
     <!-- About Screen -->
     <string name="about_header">Über</string>
     <string name="about_desc">Eine freie &amp; Open-Source Android-Anwendung zum Herunterladen von E-Books vom Gutenberg-Projekt.</string>
@@ -158,7 +148,13 @@
     <string name="link_telegram_desc">Hängen Sie bei uns auf Telegram ab!</string>
     <string name="link_support">Entwicklung unterstützen</string>
     <string name="link_support_desc">Denken Sie, ich verdiene Kekse? Klicken Sie hier!</string>
-
     <!-- Open source libraries screen -->
     <string name="open_source_licenses_header">Lizenzen</string>
+    <string name="reader_max_line_height_reached">Die maximale Zeilenhöhe wurde erreicht</string>
+    <string name="reader_min_line_height_reached">Die kleinste Zeilenhöhe wurde erreicht</string>
+    <string name="reader_dnd_setting">Bitte nicht stören</string>
+    <string name="reader_dnd_setting_desc">Bitte nicht stören beim Lesen automatisch aktivieren.</string>
+    <string name="reader_auto_scroll_start">Automatischen Bildlauf beginnen</string>
+    <string name="reader_auto_scroll_stop">Automatischen Bildlauf beenden</string>
+    <string name="reader_dnd_permission_error">Bitte erlaube den Zugriff auf Bitte nicht stören um diese Funktionalität zu verwenden.</string>
 </resources>

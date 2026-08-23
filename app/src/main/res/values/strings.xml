@@ -8,7 +8,7 @@
     <string name="ok">OK</string>
     <string name="got_it">Got it</string>
     <string name="no_app_to_handle_epub">Cannot find any app to open epub file.</string>
-    <string name="network_error">Oops! Failed to connect with the server.</string>
+    <string name="network_error">Oops! The server is temporarily unavailable. Please try again later.</string>
     <string name="network_error_retry">Try Again</string>
     <string name="error">Oops! Something went wrong.</string>
     <string name="no_app_to_handle_content">Can\'t find any app to open this content.</string>
@@ -80,10 +80,19 @@
     <string name="reader_chapters_list">Chapters</string>
 
     <!--Reader Screen -->
-    <string name="reader_max_font_size_reached">Sorry, cannot go any higher than that!</string>
-    <string name="reader_min_font_size_reached">Sorry, cannot go any lower than that!</string>
+    <string name="reader_max_font_size_reached">Max font size reached</string>
+    <string name="reader_min_font_size_reached">Min font size reached</string>
+    <string name="reader_max_line_height_reached">Max line height reached</string>
+    <string name="reader_min_line_height_reached">Min line height reached</string>
     <string name="reader_font_style_chooser">Change FontStyle</string>
     <string name="reader_chapter_list_title">Chapters</string>
+    <string name="reader_bookmarks_list_title">Bookmarks</string>
+    <string name="reader_bookmark_added">Bookmark added</string>
+    <string name="reader_bookmark_removed">Bookmark removed</string>
+    <string name="reader_sepia_mode_on">Sepia Mode: On</string>
+    <string name="reader_sepia_mode_off">Sepia Mode: Off</string>
+    <string name="reader_auto_scroll_start">Start Auto Scroll</string>
+    <string name="reader_auto_scroll_stop">Stop Auto Scroll</string>
 
     <!-- Text selection -->
     <string name="copy">Copy</string>
@@ -105,6 +114,11 @@
     <string name="default_locale_setting">Default Locale</string>
     <string name="default_locale_setting_desc">Select your preferred locale.</string>
     <string name="locale_setting_not_found">Sorry! this feature is not yet supported by your OS.</string>
+    <string name="open_library_at_start_setting">Open Library at Start</string>
+    <string name="open_library_at_start_setting_desc">Launch Library screen when app starts.</string>
+    <string name="reader_dnd_setting">Do Not Disturb</string>
+    <string name="reader_dnd_setting_desc">Automatically enable DND mode when reading.</string>
+    <string name="reader_dnd_permission_error">Please grant Do Not Disturb access to use this feature.</string>
     <string name="display_setting_header">Display</string>
     <string name="theme_setting">Default Theme</string>
     <string name="theme_dialog_title">Change Theme</string>
@@ -136,6 +150,8 @@
     <string name="read_book_button">Start Reading</string>
     <string name="download_book_button">Download</string>
     <string name="download_started">Download Started!</string>
+    <string name="public_domain">PD</string>
+    <string name="not_public_domain">NPD</string>
     <string name="book_synopsis">Synopsis</string>
     <string name="book_synopsis_not_found">Not available</string>
 

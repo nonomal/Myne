@@ -61,7 +61,7 @@ import com.starry.myne.helpers.NetworkObserver
 import com.starry.myne.ui.navigation.BottomBarScreen
 import com.starry.myne.ui.navigation.NavGraph
 import com.starry.myne.ui.navigation.Screens
-import com.starry.myne.ui.theme.figeronaFont
+import com.starry.myne.ui.theme.poppinsFont
 
 /**
  * Padding for the bottom navigation bar.
@@ -79,7 +79,8 @@ fun MainScreen(
     Scaffold(
         bottomBar = {
             BottomBar(navController = navController)
-        }, containerColor = MaterialTheme.colorScheme.background
+        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) {
         NavGraph(
             startDestination = startDestination,
@@ -110,7 +111,8 @@ private fun BottomBar(navController: NavHostController) {
     val currentDestination = navBackStackEntry?.destination
     val bottomBarDestination = screens.any { it.route == currentDestination?.route }
 
-    AnimatedVisibility(visible = bottomBarDestination,
+    AnimatedVisibility(
+        visible = bottomBarDestination,
         modifier = Modifier.fillMaxWidth(),
         enter = slideInVertically(initialOffsetY = { it }),
         exit = slideOutVertically(targetOffsetY = { it }),
@@ -171,7 +173,7 @@ private fun CustomBottomNavigationItem(
                 Text(
                     text = stringResource(id = screen.title),
                     color = contentColor,
-                    fontFamily = figeronaFont,
+                    fontFamily = poppinsFont,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(start = 4.dp)
                 )

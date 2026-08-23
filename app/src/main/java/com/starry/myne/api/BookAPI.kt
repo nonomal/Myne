@@ -17,13 +17,13 @@
 package com.starry.myne.api
 
 import android.content.Context
-import com.google.gson.Gson
 import com.starry.myne.BuildConfig
 import com.starry.myne.api.models.BookSet
-import com.starry.myne.api.models.ExtraInfo
 import com.starry.myne.helpers.book.BookLanguage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.Call
 import okhttp3.Callback
@@ -31,28 +31,23 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
-import org.json.JSONException
-import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 
 /**
  * This class is responsible for handling all the API requests related to books.
  * It uses OkHttp for making network requests and Gson for parsing JSON responses.
  * @param context The context of the application.
+ *
+ * Do not use this class directly. Use the [BookAPI] instance from dependency injection.
  */
 class BookAPI(context: Context) {
 
-    private val baseApiUrl = "https://myne.pooloftears.xyz/books"
-    private val googleBooksUrl = "https://www.googleapis.com/books/v1/volumes"
-
-    private val googleApiKey =
-        BuildConfig.GOOGLE_API_KEY ?: "AIzaSyBCaXx-U0sbEpGVPWylSggC4RaR4gCGkVE" // Backup API key
+    private val baseApiUrl = "https://myne.abyx.in/books"
 
     private val okHttpClient by lazy {
         // Create an OkHttpClient with a cache and a network interceptor.
@@ -74,8 +69,7 @@ class BookAPI(context: Context) {
         okHttpBuilder.build()
     }
 
-    private val gsonClient = Gson() // Gson client for parsing JSON responses.
-
+    private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * This function fetches all the books from the API.
@@ -140,7 +134,7 @@ class BookAPI(context: Context) {
 
     // Helper function to make API requests.
     private suspend fun makeApiRequest(request: Request): Result<BookSet> =
-        suspendCoroutine { continuation ->
+        suspendCancellableCoroutine { continuation ->
             okHttpClient.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     continuation.resume(Result.failure(exception = e))
@@ -148,68 +142,26 @@ class BookAPI(context: Context) {
 
                 override fun onResponse(call: Call, response: Response) {
                     response.use {
-                        continuation.resume(
-                            Result.success(
-                                gsonClient.fromJson(response.body!!.string(), BookSet::class.java)
+                        if (!response.isSuccessful) {
+                            continuation.resume(Result.failure(IOException("Unexpected code $response")))
+                            return
+                        }
+                        val body = response.body.string()
+                        try {
+                            continuation.resume(
+                                Result.success(
+                                    json.decodeFromString(
+                                        BookSet.serializer(),
+                                        body
+                                    ).copy(isCached = response.cacheResponse != null)
+                                )
                             )
-                        )
+                        } catch (e: Exception) {
+                            continuation.resume(Result.failure(e))
+                        }
                     }
                 }
             })
         }
-
-    // Function to fetch extra info such as cover image, page count, and description of a book.
-    // From Google Books API.
-    suspend fun getExtraInfo(bookName: String): ExtraInfo? = suspendCoroutine { continuation ->
-        val encodedName = URLEncoder.encode(bookName, "UTF-8")
-        val url = "${googleBooksUrl}?q=$encodedName&startIndex=0&maxResults=1&key=$googleApiKey"
-        val request = Request.Builder().get().url(url).build()
-        okHttpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                continuation.resume(null)
-                e.printStackTrace()
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    continuation.resume(parseExtraInfoJson(response.body!!.string()))
-                }
-            }
-        })
-    }
-
-    // Helper function to parse extra info JSON.
-    private fun parseExtraInfoJson(jsonString: String): ExtraInfo? {
-        return try {
-            val jsonObj = JSONObject(jsonString)
-            val totalItems = jsonObj.getInt("totalItems")
-            if (totalItems != 0) {
-                val items = jsonObj.getJSONArray("items")
-                val item = items.getJSONObject(0)
-                val volumeInfo = item.getJSONObject("volumeInfo")
-                val imageLinks = volumeInfo.getJSONObject("imageLinks")
-                // Build Extra info.
-                val coverImage = imageLinks.getString("thumbnail").replace(
-                    "http://", "https://"
-                )
-                val pageCount = try {
-                    volumeInfo.getInt("pageCount")
-                } catch (exc: JSONException) {
-                    0
-                }
-                val description = try {
-                    volumeInfo.getString("description")
-                } catch (exc: JSONException) {
-                    ""
-                }
-                ExtraInfo(coverImage, pageCount, description)
-            } else {
-                null
-            }
-        } catch (exc: JSONException) {
-            exc.printStackTrace()
-            null
-        }
-    }
 
 }

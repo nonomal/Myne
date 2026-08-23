@@ -38,18 +38,28 @@ class SettingsViewModel @Inject constructor(
     private val _theme = MutableLiveData(ThemeMode.Auto)
     private val _amoledTheme = MutableLiveData(false)
     private val _materialYou = MutableLiveData(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+    private val _internalReader = MutableLiveData(true)
+    private val _openLibraryAtStart = MutableLiveData(false)
+    private val _readerDND = MutableLiveData(false)
 
     val theme: LiveData<ThemeMode> = _theme
     val amoledTheme: LiveData<Boolean> = _amoledTheme
     val materialYou: LiveData<Boolean> = _materialYou
+    val internalReader: LiveData<Boolean> = _internalReader
+    val openLibraryAtStart: LiveData<Boolean> = _openLibraryAtStart
+    val readerDND: LiveData<Boolean> = _readerDND
 
     init {
         _theme.value = ThemeMode.entries.toTypedArray()[getThemeValue()]
         _amoledTheme.value = getAmoledThemeValue()
         _materialYou.value = getMaterialYouValue()
+        _internalReader.value = getInternalReaderValue()
+        _openLibraryAtStart.value = getOpenLibraryAtStartValue()
+        _readerDND.value = getReaderDNDValue()
     }
 
-    // Getters ================================================================================
+    // Getters =============================================================================
+
     fun setTheme(newTheme: ThemeMode) {
         _theme.postValue(newTheme)
         preferenceUtil.putInt(PreferenceUtil.APP_THEME_INT, newTheme.ordinal)
@@ -66,25 +76,44 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setInternalReaderValue(newValue: Boolean) {
+        _internalReader.postValue(newValue)
         preferenceUtil.putBoolean(PreferenceUtil.INTERNAL_READER_BOOL, newValue)
     }
 
-    // Getters ================================================================================
+    fun setOpenLibraryAtStartValue(newValue: Boolean) {
+        _openLibraryAtStart.postValue(newValue)
+        preferenceUtil.putBoolean(PreferenceUtil.OPEN_LIBRARY_AT_START_BOOL, newValue)
+    }
 
-    fun getThemeValue() = preferenceUtil.getInt(
+    fun setReaderDNDValue(newValue: Boolean) {
+        _readerDND.postValue(newValue)
+        preferenceUtil.putBoolean(PreferenceUtil.READER_DND_BOOL, newValue)
+    }
+
+    // Getters ============================================================================
+    // Used only during initialization except getCurrentTheme()
+    private fun getThemeValue() = preferenceUtil.getInt(
         PreferenceUtil.APP_THEME_INT, ThemeMode.Auto.ordinal
     )
 
-    fun getAmoledThemeValue() = preferenceUtil.getBoolean(
+    private fun getAmoledThemeValue() = preferenceUtil.getBoolean(
         PreferenceUtil.AMOLED_THEME_BOOL, false
     )
 
-    fun getMaterialYouValue() = preferenceUtil.getBoolean(
+    private fun getMaterialYouValue() = preferenceUtil.getBoolean(
         PreferenceUtil.MATERIAL_YOU_BOOL, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     )
 
-    fun getInternalReaderValue() = preferenceUtil.getBoolean(
+    private fun getInternalReaderValue() = preferenceUtil.getBoolean(
         PreferenceUtil.INTERNAL_READER_BOOL, true
+    )
+
+    private fun getOpenLibraryAtStartValue() = preferenceUtil.getBoolean(
+        PreferenceUtil.OPEN_LIBRARY_AT_START_BOOL, false
+    )
+
+    private fun getReaderDNDValue() = preferenceUtil.getBoolean(
+        PreferenceUtil.READER_DND_BOOL, false
     )
 
     @Composable

@@ -27,6 +27,15 @@ import java.text.StringCharacterIterator
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Data class for storing the library items (books).
+ *
+ * @param bookId The ID of the book.
+ * @param title The title of the book.
+ * @param authors The authors of the book.
+ * @param filePath The path to the book file.
+ * @param createdAt The time when the book was added to the library.
+ */
 @Entity(tableName = "book_library")
 data class LibraryItem(
     @ColumnInfo(name = "book_id")
@@ -41,7 +50,7 @@ data class LibraryItem(
     val createdAt: Long,
     // Added in database schema version 3
     @ColumnInfo(name = "is_external_book", defaultValue = "false")
-    val isExternalBook: Boolean = false
+    val isImported: Boolean = false
 ) {
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0

@@ -18,6 +18,7 @@ package com.starry.myne.helpers
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 /**
  * A helper class to manage shared preferences
@@ -29,13 +30,24 @@ class PreferenceUtil(context: Context) {
     companion object {
         private const val PREFS_NAME = "myne_settings"
 
-        // Preference keys
+        // General settings preference keys
+        const val INTERNAL_READER_BOOL = "internal_reader"
+        const val OPEN_LIBRARY_AT_START_BOOL = "launch_library_at_start"
+
+        // App theme preference keys
         const val APP_THEME_INT = "theme_settings"
         const val AMOLED_THEME_BOOL = "amoled_theme"
         const val MATERIAL_YOU_BOOL = "material_you"
-        const val INTERNAL_READER_BOOL = "internal_reader"
+
+        // Reader preference keys
         const val READER_FONT_SIZE_INT = "reader_font_size"
         const val READER_FONT_STYLE_STR = "reader_font_style"
+        const val READER_LINE_HEIGHT_FLOAT = "reader_line_height"
+        const val READER_AUTO_SCROLL_SPEED_FLOAT = "reader_auto_scroll_speed"
+        const val READER_DND_BOOL = "reader_dnd"
+        const val READER_SEPIA_MODE_BOOL = "reader_sepia_mode"
+
+        // Home screen preference keys
         const val PREFERRED_BOOK_LANG_STR = "preferred_book_language"
 
         // Temporary preference keys
@@ -43,9 +55,21 @@ class PreferenceUtil(context: Context) {
         const val LIBRARY_SWIPE_TOOLTIP_BOOL = "show_library_tooltip"
     }
 
-    //
-    private var prefs: SharedPreferences =
+    // SharedPreferences instance
+    private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    init {
+        // setup default values
+        prefs.edit {
+            if (!keyExists(INTERNAL_READER_BOOL)) putBoolean(INTERNAL_READER_BOOL, true)
+            if (!keyExists(OPEN_LIBRARY_AT_START_BOOL)) putBoolean(
+                OPEN_LIBRARY_AT_START_BOOL,
+                false
+            )
+            if (!keyExists(READER_DND_BOOL)) putBoolean(READER_DND_BOOL, false)
+        }
+    }
 
     /**
      * Check if a key exists in the preferences
@@ -53,6 +77,7 @@ class PreferenceUtil(context: Context) {
      * @param key The key to check
      * @return True if the key exists, false otherwise
      */
+    @Suppress("unused")
     fun keyExists(key: String): Boolean = prefs.contains(key)
 
     /**
@@ -62,9 +87,7 @@ class PreferenceUtil(context: Context) {
      * @param value The value to insert
      */
     fun putString(key: String, value: String) {
-        val prefsEditor = prefs.edit()
-        prefsEditor.putString(key, value)
-        prefsEditor.apply()
+        prefs.edit { putString(key, value) }
     }
 
     /**
@@ -74,9 +97,7 @@ class PreferenceUtil(context: Context) {
      * @param value The value to insert
      */
     fun putInt(key: String, value: Int) {
-        val prefsEditor = prefs.edit()
-        prefsEditor.putInt(key, value)
-        prefsEditor.apply()
+        prefs.edit { putInt(key, value) }
     }
 
     /**
@@ -86,9 +107,17 @@ class PreferenceUtil(context: Context) {
      * @param value The value to insert
      */
     fun putBoolean(key: String, value: Boolean) {
-        val prefsEditor = prefs.edit()
-        prefsEditor.putBoolean(key, value)
-        prefsEditor.apply()
+        prefs.edit { putBoolean(key, value) }
+    }
+
+    /**
+     * Insert a float value into the preferences
+     *
+     * @param key The key to insert the value into
+     * @param value The value to insert
+     */
+    fun putFloat(key: String, value: Float) {
+        prefs.edit { putFloat(key, value) }
     }
 
     /**
@@ -119,5 +148,15 @@ class PreferenceUtil(context: Context) {
      */
     fun getBoolean(key: String, defValue: Boolean): Boolean {
         return prefs.getBoolean(key, defValue)
+    }
+
+    /**
+     * Get a float value from the preferences
+     *
+     * @param key The key to get the value from
+     * @param defValue The default value to return if the key does not exist
+     */
+    fun getFloat(key: String, defValue: Float): Float {
+        return prefs.getFloat(key, defValue)
     }
 }

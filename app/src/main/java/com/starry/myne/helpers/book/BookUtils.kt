@@ -66,7 +66,7 @@ object BookUtils {
      * @return String representation of the languages.
      */
     fun getLanguagesAsString(languages: List<String>): String {
-        return languages.joinToString(", ") { Locale(it).displayLanguage }
+        return languages.joinToString(", ") { Locale.forLanguageTag(it).displayLanguage }
     }
 
     /**
@@ -111,6 +111,7 @@ object BookUtils {
             try {
                 context.startActivity(chooser)
             } catch (exc: ActivityNotFoundException) {
+                exc.printStackTrace()
                 context.getString(R.string.no_app_to_handle_epub).toToast(context)
             }
         }

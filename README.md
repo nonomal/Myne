@@ -19,14 +19,9 @@
 
 ------
 
-**Myne** is a [FOSS](https://en.m.wikipedia.org/wiki/Free_and_open-source_software) Android application for downloading and reading ebooks from [Project Gutenberg](https://gutenberg.org). It uses the [GutenDex](https://github.com/garethbjohnson/gutendex) API to fetch metadata for ebooks in the backend. Additionally, it functions as an EPUB reader, allowing you to easily import and immerse yourself in your favorite EPUB books!
+**Myne** is a [FOSS](https://en.m.wikipedia.org/wiki/Free_and_open-source_software) Android application for downloading and reading ebooks from [Project Gutenberg](https://gutenberg.org). It uses the [GutenDex](https://github.com/Pool-Of-Tears/gutendex-next) API to fetch metadata for ebooks in the backend. Additionally, it functions as an EPUB reader, allowing you to easily import and immerse yourself in your favorite EPUB books!
 
 *The name of the app is inspired from the main character of an anime called [Ascendance of a Bookworm](https://myanimelist.net/anime/39468/Honzuki_no_Gekokujou__Shisho_ni_Naru_Tame_ni_wa_Shudan_wo_Erandeiraremasen)*.
-
-
->[!Note]
->
->The app also utilizes the Google Books API to retrieve additional data such as synopsis and page count. As the Gutenberg project does not include these values in their metadata. While the app attempts to map the data received from Google Books with Gutenberg's metadata, the mapping is not always 100% accurate. Additionally, not all books available on Gutenberg are accessible on Google Books, or they may be available under different titles. As a result, you may find some books without synopsis or page count, etc.
 
 ------
 
@@ -82,7 +77,14 @@ Contributions are welcome!
 
 <h2 align="center">Translations</h2>
 
-If you want to make the app available in your language, you're welcome to create a pull request with your translation file. The base string resources can be found under:
+You can help to translate the app on [Weblate](https://toolate.othing.xyz/projects/myne/).
+
+<a href="https://toolate.othing.xyz/projects/myne/">
+<img src="https://toolate.othing.xyz/widget/myne/multi-auto.svg" alt="Translation status" />
+</a>
+
+Alternatively, you can translate manually and create a pull request with your translation file.
+The base string resources can be found at:
 ```
 /app/src/main/res/values/strings.xml
 ```
@@ -100,17 +102,18 @@ It is easiest to make a translation using the Android Studio XML editor, but you
   - [LiveData](https://developer.android.com/topic/libraries/architecture/livedata) - Data objects that notify views when the underlying database changes.
   - [ViewModel](https://developer.android.com/topic/libraries/architecture/viewmodel) - Stores UI-related data that isn't destroyed on UI changes.
 - [OkHttp3](https://square.github.io/okhttp/) - OkHttp is an HTTP client for Android that’s efficient by default.
-- [Gson](https://github.com/google/gson) - A Java serialization/deserialization library to convert Java Objects into JSON and back.
+- [Kotlinx.serialization](https://kotlinlang.org/docs/serialization.html) - Provides sets of libraries for various serialization formats – JSON, CBOR, protocol buffers, and others. 
 - [Jsoup](https://jsoup.org) - Jsoup is a Java library for working with HTML. It provides a convenient API for extracting and manipulating data, using the HTML5 DOM methods and CSS selectors.
 - [Coil](https://coil-kt.github.io/coil/compose/) - An image loading library for Android backed by Kotlin Coroutines.
 - [Dagger-Hilt](https://dagger.dev/hilt/) For [Dependency injection (DI)](https://developer.android.com/training/dependency-injection)
 - [Room database](https://developer.android.com/jetpack/androidx/releases/room) - Persistence library provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite.
+- [Lottie](https://airbnb.design/lottie) - Lottie is an Android, iOS and React Native library that renders After Effects animations in real time.
 
 ------
 
 <h2 align="center">Star History</h2>
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Pool-Of-Tears/Myne&type=Timeline)](https://star-history.com/#Pool-Of-Tears/Myne&Timeline)
+[![Star History Chart](https://star-history.dera.page/svg?repos=Pool-Of-Tears/Myne&type=Timeline)](https://star-history.dera.page/#Pool-Of-Tears/Myne&Timeline)
 
 ------
 

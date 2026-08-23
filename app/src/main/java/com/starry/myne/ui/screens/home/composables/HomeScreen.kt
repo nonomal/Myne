@@ -76,7 +76,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -96,8 +96,8 @@ import com.starry.myne.ui.screens.home.viewmodels.HomeViewModel
 import com.starry.myne.ui.screens.home.viewmodels.SearchBarState
 import com.starry.myne.ui.screens.home.viewmodels.UserAction
 import com.starry.myne.ui.screens.main.bottomNavPadding
-import com.starry.myne.ui.theme.figeronaFont
 import com.starry.myne.ui.theme.pacificoFont
+import com.starry.myne.ui.theme.poppinsFont
 import kotlinx.coroutines.delay
 
 
@@ -199,7 +199,8 @@ private fun HomeScreenScaffold(
                         })
                         sysBackButtonState.value = true
                     } else {
-                        HomeTopAppBar(bookLanguage = viewModel.language.value,
+                        HomeTopAppBar(
+                            bookLanguage = viewModel.language.value,
                             onSearchIconClicked = {
                                 viewModel.onAction(UserAction.SearchIconClicked)
                             }, onLanguageIconClicked = {
@@ -459,7 +460,7 @@ private fun SearchAppBar(
             placeholder = {
                 Text(
                     text = "Search...",
-                    fontFamily = figeronaFont,
+                    fontFamily = poppinsFont,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
             },

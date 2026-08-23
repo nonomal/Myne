@@ -20,12 +20,16 @@ package com.starry.myne.epub.models
 /**
  * Represents a chapter in an epub book.
  *
+ * @param chapterId The unique ID of the chapter.
  * @param absPath The absolute path of the chapter.
  * @param title The title of the chapter.
- * @param body The body of the chapter.
+ * @param body The body of the chapter as a list of [ReaderItem].
+ * @param nextFragmentId The ID of the next fragment in the same file.
  */
 data class EpubChapter(
+    val chapterId: String,
     val absPath: String,
     val title: String,
-    val body: String
+    val body: List<ReaderItem> = emptyList(),
+    val nextFragmentId: String? = null
 )

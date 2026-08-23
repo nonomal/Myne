@@ -24,7 +24,6 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +35,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -89,7 +89,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.psoffritti.taptargetcompose.TapTargetCoordinator
@@ -111,7 +111,7 @@ import com.starry.myne.ui.screens.library.viewmodels.LibraryViewModel
 import com.starry.myne.ui.screens.main.bottomNavPadding
 import com.starry.myne.ui.screens.settings.viewmodels.SettingsViewModel
 import com.starry.myne.ui.screens.settings.viewmodels.ThemeMode
-import com.starry.myne.ui.theme.figeronaFont
+import com.starry.myne.ui.theme.poppinsFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
@@ -236,7 +236,7 @@ fun LibraryScreen(navController: NavController) {
                         Text(
                             text = stringResource(id = R.string.import_button_text),
                             fontWeight = FontWeight.Medium,
-                            fontFamily = figeronaFont,
+                            fontFamily = poppinsFont,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -274,7 +274,7 @@ fun LibraryScreen(navController: NavController) {
                             Spacer(modifier = Modifier.width(24.dp))
                             Text(
                                 text = stringResource(id = R.string.epub_importing),
-                                fontFamily = figeronaFont,
+                                fontFamily = poppinsFont,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 17.sp,
                             )
@@ -287,7 +287,6 @@ fun LibraryScreen(navController: NavController) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryContents(
     viewModel: LibraryViewModel,
@@ -341,7 +340,7 @@ private fun LibraryContents(
                     val item = libraryItems[i]
                     if (item.fileExist()) {
                         LibraryLazyItem(
-                            modifier = Modifier.animateItemPlacement(),
+                            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
                             item = item,
                             snackBarHostState = snackBarHostState,
                             navController = navController,
@@ -373,47 +372,49 @@ private fun LibraryLazyItem(
     val openDeleteDialog = remember { mutableStateOf(false) }
 
     // Swipe actions to show book details.
-    val detailsAction = SwipeAction(icon = painterResource(
-        id = if (settingsVm.getCurrentTheme() == ThemeMode.Dark) R.drawable.ic_info else R.drawable.ic_info_white
-    ), background = MaterialTheme.colorScheme.primary, onSwipe = {
-        viewModel.viewModelScope.launch {
-            delay(250L)
-            if (item.isExternalBook) {
-                snackBarHostState.showSnackbar(
-                    message = context.getString(R.string.external_book_info_unavailable),
-                    actionLabel = context.getString(R.string.ok),
-                    duration = SnackbarDuration.Short
-                )
-            } else {
-                navController.navigate(
-                    Screens.BookDetailScreen.withBookId(
-                        item.bookId.toString()
+    val detailsAction = SwipeAction(
+        icon = painterResource(
+            id = if (settingsVm.getCurrentTheme() == ThemeMode.Dark) R.drawable.ic_info else R.drawable.ic_info_white
+        ), background = MaterialTheme.colorScheme.primary, onSwipe = {
+            viewModel.viewModelScope.launch {
+                delay(250L)
+                if (item.isImported) {
+                    snackBarHostState.showSnackbar(
+                        message = context.getString(R.string.external_book_info_unavailable),
+                        actionLabel = context.getString(R.string.ok),
+                        duration = SnackbarDuration.Short
                     )
-                )
+                } else {
+                    navController.navigate(
+                        Screens.BookDetailScreen.withBookId(
+                            item.bookId.toString()
+                        )
+                    )
+                }
             }
-        }
-    })
+        })
 
     // Swipe actions to share book.
-    val shareAction = SwipeAction(icon = painterResource(
-        id = if (settingsVm.getCurrentTheme() == ThemeMode.Dark) R.drawable.ic_share else R.drawable.ic_share_white
-    ), background = MaterialTheme.colorScheme.primary, onSwipe = {
-        val uri = FileProvider.getUriForFile(
-            context,
-            BuildConfig.APPLICATION_ID + ".provider",
-            File(item.filePath)
-        )
-        val intent = Intent(Intent.ACTION_SEND)
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        intent.type = context.contentResolver.getType(uri)
-        intent.putExtra(Intent.EXTRA_STREAM, uri)
-        context.startActivity(
-            Intent.createChooser(
-                intent,
-                context.getString(R.string.share_app_chooser)
+    val shareAction = SwipeAction(
+        icon = painterResource(
+            id = if (settingsVm.getCurrentTheme() == ThemeMode.Dark) R.drawable.ic_share else R.drawable.ic_share_white
+        ), background = MaterialTheme.colorScheme.primary, onSwipe = {
+            val uri = FileProvider.getUriForFile(
+                context,
+                BuildConfig.APPLICATION_ID + ".provider",
+                File(item.filePath)
             )
-        )
-    })
+            val intent = Intent(Intent.ACTION_SEND)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            intent.type = context.contentResolver.getType(uri)
+            intent.putExtra(Intent.EXTRA_STREAM, uri)
+            context.startActivity(
+                Intent.createChooser(
+                    intent,
+                    context.getString(R.string.share_app_chooser)
+                )
+            )
+        })
 
     SwipeableActionsBox(
         modifier = modifier.padding(vertical = 4.dp),
@@ -421,11 +422,12 @@ private fun LibraryLazyItem(
         endActions = listOf(detailsAction),
         swipeThreshold = 85.dp
     ) {
-        LibraryCard(title = item.title,
+        LibraryCard(
+            title = item.title,
             author = item.authors,
             item.getFileSize(),
             item.getDownloadDate(),
-            isExternalBook = item.isExternalBook,
+            isExternalBook = item.isImported,
             onReadClick = {
                 BookUtils.openBookFile(
                     context = context,
@@ -522,8 +524,8 @@ private fun LibraryCard(
                 Text(
                     text = title,
                     fontStyle = MaterialTheme.typography.headlineMedium.fontStyle,
-                    fontSize = 20.sp,
-                    fontFamily = figeronaFont,
+                    fontSize = 18.sp,
+                    fontFamily = poppinsFont,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -532,20 +534,20 @@ private fun LibraryCard(
 
                 Text(
                     text = author,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
                     maxLines = 1,
                     fontStyle = MaterialTheme.typography.bodySmall.fontStyle,
-                    fontFamily = figeronaFont,
+                    fontFamily = poppinsFont,
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.offset(y = (-8).dp)
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Row {
+                Row(modifier = Modifier.offset(y = (-8).dp)) {
                     Text(
                         text = fileSize,
-                        fontFamily = figeronaFont,
+                        fontFamily = poppinsFont,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Light,
                         fontSize = 14.sp,
@@ -560,7 +562,7 @@ private fun LibraryCard(
                     )
                     Text(
                         text = date,
-                        fontFamily = figeronaFont,
+                        fontFamily = poppinsFont,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Light,
                         fontSize = 14.sp,
@@ -568,20 +570,20 @@ private fun LibraryCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row {
-                    LibraryCardButton(text = stringResource(id = R.string.library_read_button),
+                Row(modifier = Modifier.offset(y = (-4).dp)) {
+                    LibraryCardButton(
+                        text = stringResource(id = R.string.library_read_button),
                         icon = ImageVector.vectorResource(id = R.drawable.ic_library_read),
                         onClick = { onReadClick() })
 
                     Spacer(modifier = Modifier.width(10.dp))
 
-                    LibraryCardButton(text = stringResource(id = R.string.library_delete_button),
+                    LibraryCardButton(
+                        text = stringResource(id = R.string.library_delete_button),
                         icon = Icons.Outlined.Delete,
                         onClick = { onDeleteClick() })
                 }
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(2.dp))
             }
         }
     }
@@ -593,30 +595,31 @@ private fun LibraryCardButton(
     icon: ImageVector,
     onClick: () -> Unit,
 ) {
-    Box(modifier = Modifier
-        .border(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.onSurface,
-            shape = RoundedCornerShape(8.dp)
-        )
-        .clickable { onClick() }) {
+    Box(
+        modifier = Modifier
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable { onClick() }
+    ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(6.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(size = 14.dp),
-                tint = MaterialTheme.colorScheme.onSurface
+                contentDescription = "Favorite Icon",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(14.dp)
             )
-
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = text,
-                fontWeight = FontWeight.Medium,
-                fontFamily = figeronaFont,
-                fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = 2.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
             )
         }
     }
@@ -627,7 +630,8 @@ private fun LibraryCardButton(
 @Composable
 @Preview
 fun LibraryScreenPreview() {
-    LibraryCard(title = "The Idiot",
+    LibraryCard(
+        title = "The Idiot",
         author = "Fyodor Dostoevsky",
         fileSize = "5.9MB",
         date = "01- Jan -2020",

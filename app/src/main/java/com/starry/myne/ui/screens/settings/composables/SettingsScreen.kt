@@ -16,8 +16,9 @@
 
 package com.starry.myne.ui.screens.settings.composables
 
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.Image
@@ -25,6 +26,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,7 +35,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -45,6 +47,7 @@ import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalPolice
+import androidx.compose.material.icons.filled.NotificationsPaused
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,6 +64,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,8 +82,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.starry.myne.BuildConfig
 import com.starry.myne.MainActivity
 import com.starry.myne.R
@@ -90,7 +94,7 @@ import com.starry.myne.ui.navigation.Screens
 import com.starry.myne.ui.screens.main.bottomNavPadding
 import com.starry.myne.ui.screens.settings.viewmodels.SettingsViewModel
 import com.starry.myne.ui.screens.settings.viewmodels.ThemeMode
-import com.starry.myne.ui.theme.figeronaFont
+import com.starry.myne.ui.theme.poppinsFont
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,26 +131,31 @@ fun SettingsScreen(navController: NavController) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-@ExperimentalMaterial3Api
 private fun SettingsCard() {
     Card(
         modifier = Modifier
-            .height(150.dp)
             .padding(10.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(6.dp)
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier
                 .padding(20.dp)
-                .fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.Center,
+            maxItemsInEachRow = Int.MAX_VALUE
         ) {
-            Column {
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .padding(bottom = 2.dp)
+            ) {
                 Text(
                     text = "${stringResource(id = R.string.app_name)} ${stringResource(id = R.string.app_desc)}",
-                    fontFamily = figeronaFont,
+                    fontFamily = poppinsFont,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
@@ -154,7 +163,7 @@ private fun SettingsCard() {
 
                 Text(
                     text = stringResource(id = R.string.made_by),
-                    fontFamily = figeronaFont,
+                    fontFamily = poppinsFont,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -164,14 +173,13 @@ private fun SettingsCard() {
                     modifier = Modifier.padding(top = 10.dp),
                     onClick = {},
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        disabledContainerColor = MaterialTheme.colorScheme.primary
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
                     contentPadding = PaddingValues(horizontal = 30.dp),
                 ) {
                     Text(
                         text = "version-${BuildConfig.VERSION_NAME}",
-                        fontFamily = figeronaFont,
+                        fontFamily = poppinsFont,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
@@ -181,10 +189,8 @@ private fun SettingsCard() {
 
             Box(
                 modifier = Modifier
-                    .height(90.dp)
-                    .width(90.dp)
+                    .size(90.dp)
                     .clip(CircleShape)
-                    //  .padding(10.dp)
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
@@ -207,7 +213,11 @@ private fun GeneralOptionsUI(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val internalReaderValue = when (viewModel.getInternalReaderValue()) {
+    val internalReaderState = viewModel.internalReader.observeAsState(initial = true)
+    val openLibraryAtStartState = viewModel.openLibraryAtStart.observeAsState(initial = false)
+    val readerDNDState = viewModel.readerDND.observeAsState(initial = false)
+
+    val internalReaderValue = when (internalReaderState.value) {
         true -> stringResource(id = R.string.reader_option_inbuilt)
         false -> stringResource(id = R.string.reader_option_external)
     }
@@ -225,7 +235,7 @@ private fun GeneralOptionsUI(
     ) {
         Text(
             text = stringResource(id = R.string.general_settings_header),
-            fontFamily = figeronaFont,
+            fontFamily = poppinsFont,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -248,7 +258,7 @@ private fun GeneralOptionsUI(
                 // See: https://github.com/Pool-Of-Tears/GreenStash/issues/130 for more.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !Utils.isMiui()) {
                     val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                        data = Uri.parse("package:${context.packageName}")
+                        data = "package:${context.packageName}".toUri()
                     }
                     context.startActivity(intent)
                 } else {
@@ -261,7 +271,39 @@ private fun GeneralOptionsUI(
             }
         )
 
+        SettingItemWIthSwitch(
+            icon = ImageVector.vectorResource(id = R.drawable.ic_settings_library_start),
+            mainText = stringResource(id = R.string.open_library_at_start_setting),
+            subText = stringResource(id = R.string.open_library_at_start_setting_desc),
+            switchState = openLibraryAtStartState,
+            onCheckChange = {
+                viewModel.setOpenLibraryAtStartValue(it)
+            }
+        )
 
+        SettingItemWIthSwitch(
+            icon = Icons.Filled.NotificationsPaused,
+            mainText = stringResource(id = R.string.reader_dnd_setting),
+            subText = stringResource(id = R.string.reader_dnd_setting_desc),
+            switchState = readerDNDState,
+            onCheckChange = {
+                if (it) {
+                    val notificationManager =
+                        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    if (!notificationManager.isNotificationPolicyAccessGranted) {
+                        val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                        context.startActivity(intent)
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar(context.getString(R.string.reader_dnd_permission_error))
+                        }
+                    } else {
+                        viewModel.setReaderDNDValue(true)
+                    }
+                } else {
+                    viewModel.setReaderDNDValue(false)
+                }
+            }
+        )
     }
 
     if (showReaderDialog.value) {
@@ -303,7 +345,7 @@ private fun GeneralOptionsUI(
                             text = text,
                             modifier = Modifier.padding(start = 16.dp),
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontFamily = figeronaFont
+                            fontFamily = poppinsFont
                         )
                     }
                 }
@@ -349,31 +391,33 @@ private fun DisplayOptionsUI(
     val coroutineScope = rememberCoroutineScope()
 
     // Display settings for the theme
-    val displayValue =
-        when (viewModel.getThemeValue()) {
-            ThemeMode.Light.ordinal -> stringResource(id = R.string.theme_option_light)
-            ThemeMode.Dark.ordinal -> stringResource(id = R.string.theme_option_dark)
-            else -> stringResource(id = R.string.theme_option_system)
-        }
-    val displayDialog = remember { mutableStateOf(false) }
-    val radioOptions = listOf(
+    val appThemeState = viewModel.theme.observeAsState(initial = ThemeMode.Auto)
+    val selectedAppTheme = when (appThemeState.value) {
+        ThemeMode.Light -> stringResource(id = R.string.theme_option_light)
+        ThemeMode.Dark -> stringResource(id = R.string.theme_option_dark)
+        else -> stringResource(id = R.string.theme_option_system)
+    }
+    val appThemeDialog = remember { mutableStateOf(false) }
+    val appThemeRadioOpts = listOf(
         stringResource(id = R.string.theme_option_light),
         stringResource(id = R.string.theme_option_dark),
         stringResource(id = R.string.theme_option_system)
     )
-    val (selectedOption, onOptionSelected) = remember { mutableStateOf(displayValue) }
+    val (selectedOption, onOptionSelected) = remember { mutableStateOf(selectedAppTheme) }
 
     // Display settings for the amoled theme
-    val amoledSwitch = remember { mutableStateOf(viewModel.getAmoledThemeValue()) }
-    val amoledDesc = if (amoledSwitch.value) {
+    val amoledState = viewModel.amoledTheme.observeAsState(initial = false)
+    val amoledDesc = if (amoledState.value) {
         stringResource(id = R.string.amoled_theme_setting_enabled_desc)
     } else {
         stringResource(id = R.string.amoled_theme_setting_disabled_desc)
     }
 
     // Display settings for the Material You theme
-    val materialYouSwitch = remember { mutableStateOf(viewModel.getMaterialYouValue()) }
-    val materialYouDesc = if (materialYouSwitch.value) {
+    val materialYouState = viewModel.materialYou.observeAsState(
+        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    )
+    val materialYouDesc = if (materialYouState.value) {
         stringResource(id = R.string.material_you_setting_enabled_desc)
     } else {
         stringResource(id = R.string.material_you_setting_disabled_desc)
@@ -386,7 +430,7 @@ private fun DisplayOptionsUI(
     ) {
         Text(
             text = stringResource(id = R.string.display_setting_header),
-            fontFamily = figeronaFont,
+            fontFamily = poppinsFont,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -395,39 +439,36 @@ private fun DisplayOptionsUI(
         SettingItem(
             icon = Icons.Filled.BrightnessMedium,
             mainText = stringResource(id = R.string.theme_setting),
-            subText = displayValue,
-            onClick = { displayDialog.value = true }
+            subText = selectedAppTheme,
+            onClick = { appThemeDialog.value = true }
         )
         SettingItemWIthSwitch(
             icon = Icons.Filled.Contrast,
             mainText = stringResource(id = R.string.amoled_theme_setting),
             subText = amoledDesc,
-            switchState = amoledSwitch,
+            switchState = amoledState,
             onCheckChange = {
                 viewModel.setAmoledTheme(it)
-                amoledSwitch.value = it
             })
         SettingItemWIthSwitch(
             icon = Icons.Filled.Palette,
             mainText = stringResource(id = R.string.material_you_setting),
             subText = materialYouDesc,
-            switchState = materialYouSwitch,
+            switchState = materialYouState,
             onCheckChange = { materialYouValue ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     viewModel.setMaterialYou(materialYouValue)
-                    materialYouSwitch.value = materialYouValue
                 } else {
                     viewModel.setMaterialYou(false)
-                    materialYouSwitch.value = false
                     coroutineScope.launch { snackBarHostState.showSnackbar(context.getString(R.string.material_you_error)) }
                 }
             }
         )
     }
 
-    if (displayDialog.value) {
+    if (appThemeDialog.value) {
         AlertDialog(onDismissRequest = {
-            displayDialog.value = false
+            appThemeDialog.value = false
         }, title = {
             Text(
                 text = stringResource(id = R.string.theme_dialog_title),
@@ -438,7 +479,7 @@ private fun DisplayOptionsUI(
                 modifier = Modifier.selectableGroup(),
                 verticalArrangement = Arrangement.Center,
             ) {
-                radioOptions.forEach { text ->
+                appThemeRadioOpts.forEach { text ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -464,7 +505,7 @@ private fun DisplayOptionsUI(
                             text = text,
                             modifier = Modifier.padding(start = 16.dp),
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontFamily = figeronaFont
+                            fontFamily = poppinsFont
                         )
                     }
                 }
@@ -472,7 +513,7 @@ private fun DisplayOptionsUI(
         }, confirmButton = {
             FilledTonalButton(
                 onClick = {
-                    displayDialog.value = false
+                    appThemeDialog.value = false
 
                     when (selectedOption) {
                         context.getString(R.string.theme_option_light) -> {
@@ -496,7 +537,7 @@ private fun DisplayOptionsUI(
             }
         }, dismissButton = {
             TextButton(onClick = {
-                displayDialog.value = false
+                appThemeDialog.value = false
             }) {
                 Text(stringResource(id = R.string.cancel))
             }
@@ -514,7 +555,7 @@ private fun InformationUI(navController: NavController) {
         ) {
             Text(
                 text = stringResource(id = R.string.miscellaneous_setting_header),
-                fontFamily = figeronaFont,
+                fontFamily = poppinsFont,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -542,5 +583,5 @@ private fun InformationUI(navController: NavController) {
 @Composable
 @Preview
 fun SettingsScreenPreview() {
-    SettingsScreen(rememberNavController())
+    SettingsCard()
 }

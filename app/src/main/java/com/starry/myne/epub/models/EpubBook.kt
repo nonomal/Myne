@@ -29,6 +29,7 @@ import android.graphics.Bitmap
  * @param coverImage The cover image of the book.
  * @param chapters The list of chapters in the book.
  * @param images The list of images in the book.
+ * @param filePath The absolute path of the epub file.
  */
 data class EpubBook(
     val fileName: String,
@@ -36,6 +37,7 @@ data class EpubBook(
     val author: String,
     val language: String,
     val coverImage: Bitmap?,
-    val chapters: List<EpubChapter>,
-    val images: List<EpubImage>
+    val chapters: List<EpubChapter> = emptyList(),
+    val images: List<EpubImage> = emptyList(),
+    val filePath: String = ""
 )

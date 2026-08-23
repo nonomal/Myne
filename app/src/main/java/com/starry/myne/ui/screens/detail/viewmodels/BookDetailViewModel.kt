@@ -24,7 +24,6 @@ import androidx.lifecycle.viewModelScope
 import com.starry.myne.api.BookAPI
 import com.starry.myne.api.models.Book
 import com.starry.myne.api.models.BookSet
-import com.starry.myne.api.models.ExtraInfo
 import com.starry.myne.database.library.LibraryDao
 import com.starry.myne.database.library.LibraryItem
 import com.starry.myne.helpers.Constants
@@ -35,12 +34,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class BookDetailScreenState(
     val isLoading: Boolean = true,
     val bookSet: BookSet = BookSet(0, null, null, emptyList()),
-    val extraInfo: ExtraInfo = ExtraInfo(),
     val bookLibraryItem: LibraryItem? = null,
     val error: String? = null
 )
@@ -54,6 +53,7 @@ class BookDetailViewModel @Inject constructor(
     private val preferenceUtil: PreferenceUtil
 ) : ViewModel() {
     var state by mutableStateOf(BookDetailScreenState())
+        private set
 
     fun getInternalReaderSetting() = preferenceUtil.getBoolean(
         PreferenceUtil.INTERNAL_READER_BOOL, true
@@ -62,22 +62,22 @@ class BookDetailViewModel @Inject constructor(
     fun getBookDetails(bookId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                // This method can be called multiple times. like if
+                // request fails and user clicks on retry button.
+                // So, we are setting isLoading to true before making
+                // the request to show the loading indicator in the UI.
+                state = state.copy(isLoading = true)
                 val bookSet = bookAPI.getBookById(bookId).getOrNull()!!
-                val extraInfo = bookAPI.getExtraInfo(bookSet.books.first().title)
-                // This function is called again when user clicks on retry
-                // button. So, we need to reset the state to default values
-                state = BookDetailScreenState()
+
                 // If API response is cached, it will not show the loading
                 // indicator. So, we are adding a delay to show the loading
                 // indicator. This is just for better UX.
-                delay(400)
-                state = if (extraInfo != null) {
-                    state.copy(bookSet = bookSet, extraInfo = extraInfo)
-                } else {
-                    state.copy(bookSet = bookSet)
-                }
+                if (bookSet.isCached) delay(400)
                 state = state.copy(
-                    bookLibraryItem = libraryDao.getItemByBookId(bookId.toInt()), isLoading = false
+                    bookSet = bookSet,
+                    bookLibraryItem = libraryDao.getItemByBookId(bookId.toInt()),
+                    isLoading = false,
+                    error = null
                 )
             } catch (exc: Exception) {
                 state = state.copy(
@@ -88,14 +88,23 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
+    fun reFetchLibraryItem(bookId: Int, onComplete: (LibraryItem) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val libraryItem = libraryDao.getItemByBookId(bookId)
+            state = state.copy(bookLibraryItem = libraryItem)
+            libraryItem?.let { withContext(Dispatchers.Main) { onComplete(libraryItem) } }
+        }
+    }
+
     fun downloadBook(
         book: Book, downloadProgressListener: (Float, Int) -> Unit
     ) {
-        bookDownloader.downloadBook(book = book,
+        bookDownloader.downloadBook(
+            book = book,
             downloadProgressListener = downloadProgressListener,
             onDownloadSuccess = { filePath ->
                 insertIntoDB(book = book, filePath = filePath)
-                state = state.copy(bookLibraryItem = libraryDao.getItemById(book.id))
+                state = state.copy(bookLibraryItem = libraryDao.getItemByBookId(book.id))
             }
         )
     }

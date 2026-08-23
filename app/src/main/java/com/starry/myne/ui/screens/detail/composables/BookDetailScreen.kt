@@ -25,12 +25,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -39,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Copyright
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,10 +75,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionResult
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -92,11 +93,9 @@ import com.starry.myne.ui.common.BookDetailTopUI
 import com.starry.myne.ui.common.NetworkError
 import com.starry.myne.ui.common.ProgressDots
 import com.starry.myne.ui.screens.detail.viewmodels.BookDetailViewModel
-import com.starry.myne.ui.theme.figeronaFont
 import com.starry.myne.ui.theme.pacificoFont
-import kotlinx.coroutines.Dispatchers
+import com.starry.myne.ui.theme.poppinsFont
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -112,7 +111,7 @@ fun BookDetailScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         content = { paddingValues ->
             LaunchedEffect(key1 = true, block = {
-                viewModel.getBookDetails(bookId)
+                if (state.isLoading) viewModel.getBookDetails(bookId)
             })
 
             Column(
@@ -193,29 +192,31 @@ private fun BookDetailContents(
         BookDetailTopUI(
             title = book.title,
             authors = authors,
-            imageData = state.extraInfo.coverImage.ifEmpty { book.formats.imagejpeg },
+            imageData = book.formats.imagejpeg,
             currentThemeMode = settingsVM.getCurrentTheme()
         )
 
-        val pageCount = remember {
-            if (state.extraInfo.pageCount > 0) {
-                state.extraInfo.pageCount.toString()
+        val copyright = remember {
+            if (book.copyright) {
+                context.getString(R.string.not_public_domain)
             } else {
-                context.getString(R.string.not_applicable)
+                context.getString(R.string.public_domain)
+            }
+        }
+        var buttonText by remember { mutableStateOf("") }
+
+        // Update button text based on download status.
+        LaunchedEffect(key1 = true) {
+            buttonText = if (viewModel.bookDownloader.isBookCurrentlyDownloading(book.id)) {
+                context.getString(R.string.cancel)
+            } else {
+                when (state.bookLibraryItem) {
+                    null -> context.getString(R.string.download_book_button)
+                    else -> context.getString(R.string.read_book_button)
+                }
             }
         }
 
-        // Check if this book is in downloadQueue.
-        val buttonTextValue =
-            if (viewModel.bookDownloader.isBookCurrentlyDownloading(book.id)) {
-                stringResource(id = R.string.cancel)
-            } else {
-                if (state.bookLibraryItem != null) stringResource(id = R.string.read_book_button) else stringResource(
-                    id = R.string.download_book_button
-                )
-            }
-
-        var buttonText by remember { mutableStateOf(buttonTextValue) }
         var progressState by remember { mutableFloatStateOf(0f) }
         var showProgressBar by remember { mutableStateOf(false) }
 
@@ -250,7 +251,7 @@ private fun BookDetailContents(
 
         MiddleBar(
             bookLang = BookUtils.getLanguagesAsString(book.languages),
-            pageCount = pageCount,
+            copyright = copyright,
             downloadCount = Utils.prettyCount(book.downloadCount),
             progressValue = progressState,
             buttonText = buttonText,
@@ -258,7 +259,6 @@ private fun BookDetailContents(
         ) {
             when (buttonText) {
                 context.getString(R.string.read_book_button) -> {
-                    val bookLibraryItem = state.bookLibraryItem
                     /**
                      *  Library item could be null if we reload the screen
                      *  while some download was running, in that case we'll
@@ -266,11 +266,10 @@ private fun BookDetailContents(
                      *  will update library item and our new state will have
                      *  no library item, i.e. null.
                      */
-                    if (bookLibraryItem == null) {
-                        viewModel.viewModelScope.launch(Dispatchers.IO) {
-                            val libraryItem =
-                                viewModel.libraryDao.getItemByBookId(book.id)!!
-                            withContext(Dispatchers.Main) {
+                    if (state.bookLibraryItem == null) {
+                        viewModel.reFetchLibraryItem(
+                            bookId = book.id,
+                            onComplete = { libraryItem ->
                                 BookUtils.openBookFile(
                                     context = context,
                                     internalReader = viewModel.getInternalReaderSetting(),
@@ -278,12 +277,12 @@ private fun BookDetailContents(
                                     navController = navController
                                 )
                             }
-                        }
+                        )
                     } else {
                         BookUtils.openBookFile(
                             context = context,
                             internalReader = viewModel.getInternalReaderSetting(),
-                            libraryItem = bookLibraryItem,
+                            libraryItem = state.bookLibraryItem,
                             navController = navController
                         )
                     }
@@ -314,20 +313,20 @@ private fun BookDetailContents(
 
         Text(
             text = stringResource(id = R.string.book_synopsis),
-            modifier = Modifier.padding(start = 12.dp, end = 8.dp),
-            fontSize = 20.sp,
-            fontFamily = figeronaFont,
-            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 13.dp, end = 8.dp),
+            fontSize = 18.sp,
+            fontFamily = poppinsFont,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        val synopsis = state.extraInfo.description.ifEmpty { null }
+        val synopsis = book.summaries.firstOrNull()
         if (synopsis != null) {
             Text(
                 text = synopsis,
-                modifier = Modifier.padding(14.dp),
-                fontFamily = figeronaFont,
-                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                fontFamily = poppinsFont,
+                fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onBackground,
             )
         } else {
@@ -339,7 +338,7 @@ private fun BookDetailContents(
 @Composable
 private fun MiddleBar(
     bookLang: String,
-    pageCount: String,
+    copyright: String,
     downloadCount: String,
     progressValue: Float,
     buttonText: String,
@@ -376,93 +375,99 @@ private fun MiddleBar(
             }
         }
 
+
         Card(
             modifier = Modifier
-                .height(90.dp)
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 6.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
-                    2.dp
-                )
+                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
             )
         ) {
-            Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .heightIn(min = 75.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.ic_book_language),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(top = 14.dp, bottom = 14.dp, end = 4.dp)
+                            modifier = Modifier.padding(end = 4.dp)
                         )
                         Text(
                             text = bookLang,
-                            modifier = Modifier.padding(top = 14.dp, bottom = 14.dp, start = 4.dp),
-                            fontSize = 18.sp,
-                            fontFamily = figeronaFont,
+                            fontSize = 16.sp,
+                            fontFamily = poppinsFont,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-
                 }
+
                 VerticalDivider(
                     modifier = Modifier
                         .fillMaxHeight(0.6f)
-                        .width(2.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                 )
+
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_book_pages),
+                            imageVector = Icons.Filled.Copyright,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(top = 13.dp, bottom = 15.dp, end = 4.dp)
+                            modifier = Modifier.padding(end = 4.dp)
                         )
                         Text(
-                            text = pageCount,
-                            modifier = Modifier.padding(top = 14.dp, bottom = 14.dp, start = 4.dp),
-                            fontSize = 18.sp,
-                            fontFamily = figeronaFont,
+                            text = copyright,
+                            fontSize = 14.sp,
+                            fontFamily = poppinsFont,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
+
                 VerticalDivider(
                     modifier = Modifier
                         .fillMaxHeight(0.6f)
-                        .width(2.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                 )
+
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.ic_book_downloads),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(top = 15.dp, bottom = 13.dp, end = 4.dp)
+                            modifier = Modifier.padding(end = 4.dp)
                         )
                         Text(
                             text = downloadCount,
-                            modifier = Modifier.padding(top = 14.dp, bottom = 14.dp, start = 4.dp),
-                            fontSize = 18.sp,
-                            fontFamily = figeronaFont,
+                            fontSize = 16.sp,
+                            fontFamily = poppinsFont,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
@@ -485,8 +490,8 @@ private fun MiddleBar(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = buttonText,
-                    fontSize = 18.sp,
-                    fontFamily = figeronaFont,
+                    fontSize = 17.sp,
+                    fontFamily = poppinsFont,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
@@ -532,14 +537,15 @@ private fun BookDetailTopBar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Box(modifier = Modifier
-            .padding(22.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp))
-            .clickable {
-                view.weakHapticFeedback()
-                onShareClicked()
-            }) {
+        Box(
+            modifier = Modifier
+                .padding(22.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp))
+                .clickable {
+                    view.weakHapticFeedback()
+                    onShareClicked()
+                }) {
             Icon(
                 imageVector = Icons.Outlined.Share,
                 contentDescription = stringResource(id = R.string.back_button_desc),
@@ -580,7 +586,7 @@ private fun NoSynopsisUI() {
         Text(
             text = stringResource(id = R.string.book_synopsis_not_found),
             modifier = Modifier.padding(14.dp),
-            fontFamily = figeronaFont,
+            fontFamily = poppinsFont,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -590,10 +596,25 @@ private fun NoSynopsisUI() {
 
 
 @Composable
+@Preview
+fun MiddleBarPreview(modifier: Modifier = Modifier) {
+    MiddleBar(
+        bookLang = "English",
+        copyright = "Public Domain",
+        downloadCount = "1.2K",
+        progressValue = 0.5f,
+        buttonText = "Download",
+        showProgressBar = true,
+        onButtonClick = {}
+    )
+}
+
+/*
+@Composable
 @Preview(showBackground = true)
 fun BookDetailScreenPreview() {
     BookDetailScreen(
         bookId = "0",
         navController = rememberNavController(),
     )
-}
+}*/
